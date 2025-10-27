@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 import serial
+import serial.tools.list_ports
 import json
 import os
 import time
@@ -35,6 +36,28 @@ arduino = None
 LOG_FILE = "taikhoan.json"
 PPASS_FILE = "pripass.json"
 DATA_FILE = "date.json"
+def find_arduino_port():
+    ports = serial.tools.list_ports.comports()
+    arduino_port = None
+
+    for port in ports:
+        if ("Arduino" in port.description) or ("CH340" in port.description) or ("USB Serial" in port.description):
+            arduino_port = port.device
+            break
+
+    if arduino_port:
+        try:
+            arduino = serial.Serial(port=arduino_port, baudrate=9600, timeout=1)
+            time.sleep(2)
+            print(f"Kết nối Arduino cổng: {arduino_port}")
+            return arduino
+        except Exception as e:
+            print("Không tìm thấy cổng", e)
+            return None
+    else:
+        print("Lỗi kết nối")
+        return None
+
 
 def load_accounts():
     if not os.path.exists(LOG_FILE):
@@ -366,10 +389,12 @@ class ArduinoFrame(Tk):
             "VIỆT QUẤT":'b'
         }
         self.create_widgets()
+        arduino = find_arduino_port()
         if os.path.exists(DATA_FILE):
             data = load_time()
             alarmTime = data[0]['start_time']
             self.show_time_remaining(alarmTime)
+
         # self.read_soil()
 
     def create_widgets(self):
@@ -554,7 +579,7 @@ class ArduinoFrame(Tk):
             if ":" in line:
                 parts = line.split(":", 1)
                 value = int(parts[1].strip())
-                self.label_soil.config(text=f"Độ ẩm đất: {self.value}%")
+                self.label_soil.config(text=f"Độ ẩm đất: {value}%")
                 if value >= 1000:
                     mes = messagebox.askyesno("Thông báo độ ẩm","Có cần tưới thêm nước?")
                     if mes:
@@ -782,20 +807,16 @@ class Users(Frame):
         self.Hola(name)
         self.after(3000, self.show_arduino_frame)
 
-
-        
 # app
 class App(Tk):
     def __init__(self):
         super().__init__()
         self.geometry("620x320")
         self.resizable(False, False)
-        # Frames
+
         self.login_frame = LoginFrame(self, self.show_users_frame)
-        # self.arduino_frame = ArduinoFrame
         self.users_frame = Users(self,self.show_arduino_frame)
 
-        # Hiển thị login lúc đầu
         self.login_frame.pack(fill="both", expand=True)
 
     def show_users_frame(self):
@@ -803,15 +824,15 @@ class App(Tk):
         self.users_frame.pack(fill="both", expand=True)
 
     def show_arduino_frame(self):
-        self.users_frame.pack_forget()
         self.destroy()
-        ArduinoFrame()
+        # self.users_frame.pack_forget()
+        main = ArduinoFrame()
+        main.mainloop()
         
-
     def show_login_frame(self):
         self.arduino_frame.pack_forget()
         self.login_frame.pack(fill="both", expand=True)
 
 if __name__ == "__main__":
-    app = ArduinoFrame()
+    app = App()
     app.mainloop()
