@@ -11,32 +11,17 @@ import datetime
 # Set up
 BAUDRATE = 9600
 invalid_char = "~`!@#$%^&*()/|{}[]\\.,/?':;"
-cay_list = {
-            # "CÀ CHUA":'r',
-            # "XÀ LÁCH":'g',
-            # "VIỆT QUẤT":'b'
-}
+
 users = ["Tuấn","Quân","Khang","Toàn","Dũng"]
 colorwheel = ["#F00001","#03FF3A","#00B7FF","#4C00FF","white"]
 time_format = "00:00:00"
 num = "1234567890"
 
-arduino = None
-# def findPort():
-#     SERIAL_PORT = 'COM9'
-#     if arduino = None:
-#        ... 
-#     try:
-#         arduino = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=1)
-#         time.sleep(2)
-#     except Exception as e:
-#         print("Không thể kết nối Arduino:", e)
-#         arduino = None
-
 LOG_FILE = "taikhoan.json"
 PPASS_FILE = "pripass.json"
 DATA_FILE = "date.json"
-def find_arduino_port():
+
+def find_arduinoPort():
     ports = serial.tools.list_ports.comports()
     arduino_port = None
 
@@ -47,7 +32,7 @@ def find_arduino_port():
 
     if arduino_port:
         try:
-            arduino = serial.Serial(port=arduino_port, baudrate=9600, timeout=1)
+            arduino = serial.Serial(port=arduino_port, baudrate=BAUDRATE, timeout=1)
             time.sleep(2)
             print(f"Kết nối Arduino cổng: {arduino_port}")
             return arduino
@@ -215,7 +200,7 @@ class Askpass(Toplevel):
         self.askEntry = Entry(self, show="*",width=15,fg="#f36bc5",font=("Montserrat Black", 12, "bold"))
         self.askEntry.pack()
         keypad = Frame(self,bg="#250c6a")
-        keypad.pack(padx=(30,0),pady=(5,2))
+        keypad.pack(padx=(39,0),pady=(5,2))
         index = 0
         for i in range(3):
             for j in range(3):
@@ -230,7 +215,7 @@ class Askpass(Toplevel):
                 ).grid(row=i, column=j, padx=(3,0), pady=(2,0))
                 index += 1
 
-        Button(keypad, text="<-", font=("Montserrat Black", 12, "bold"),bg="#f36bc5",fg='white',command=lambda:self.askEntry.delete(len(self.askEntry.get())-1,END)).grid(row=2, column=3, padx=(3,0), pady=(2,0))
+        Button(keypad, text="⌫", font=("Montserrat Black", 12, "bold"),bg="#f36bc5",fg='white',command=lambda:self.askEntry.delete(len(self.askEntry.get())-1,END)).grid(row=2, column=3, padx=(3,0), pady=(2,0))
         Button(self, text="0", font=("Montserrat Black", 12, "bold"),width=3, height=1,bg="#f36bc5",fg='white',command=lambda:self.askEntry.insert(END, "0")).pack(pady=(0,2))
         Button(self, text="Xác nhận", font=("Montserrat Black", 10, "bold"),bg="#f36bc5",fg='white',command=self.pass_in).pack()
 
@@ -261,7 +246,7 @@ class addPass(Toplevel):
         self.askEntry = Entry(self, show="*",width=15,fg="#f36bc5",font=("Montserrat Black", 12, "bold"))
         self.askEntry.pack()
         keypad = Frame(self,bg="#250c6a")
-        keypad.pack(padx=(30,0),pady=(5,2))
+        keypad.pack(padx=(39,0),pady=(5,2))
         index = 0
         for i in range(3):
             for j in range(3):
@@ -275,7 +260,7 @@ class addPass(Toplevel):
                     command=lambda n=num[index]: self.askEntry.insert(END, n)
                 ).grid(row=i, column=j, padx=(3,0), pady=2)
                 index += 1
-        Button(keypad, text="<-", font=("Montserrat Black", 12, "bold"),bg="#f36bc5",fg='white',command=lambda:self.askEntry.delete(len(self.askEntry.get())-1,END)).grid(row=2, column=3, padx=(3,0), pady=2)
+        Button(keypad, text="⌫", font=("Montserrat Black", 12, "bold"),bg="#f36bc5",fg='white',command=lambda:self.askEntry.delete(len(self.askEntry.get())-1,END)).grid(row=2, column=3, padx=(3,0), pady=2)
         Button(self, text="0", font=("Montserrat Black", 12, "bold"),width=3, height=1,bg="#f36bc5",fg='white',command=lambda:self.askEntry.insert(END, "0")).pack(pady=(0,2))
         Button(self, text="Xác nhận", font=("Montserrat Black", 10, "bold"),bg="#f36bc5",fg='white',command=self.confirm).pack()
 
@@ -382,6 +367,7 @@ class ArduinoFrame(Tk):
         super().__init__()
         self.geometry("620x780")
         self.resizable(False, True)
+        arduino = find_arduinoPort()
         self.background = PhotoImage(file='background.png')
         self.cay_list = {
             "CÀ CHUA":'r',
@@ -389,7 +375,6 @@ class ArduinoFrame(Tk):
             "VIỆT QUẤT":'b'
         }
         self.create_widgets()
-        arduino = find_arduino_port()
         if os.path.exists(DATA_FILE):
             data = load_time()
             alarmTime = data[0]['start_time']
@@ -527,9 +512,13 @@ class ArduinoFrame(Tk):
     def blink_led(self):
         self.send_command(b'6')
         self.addHis("Nháy","LED")
+        if self.scaleLED.get() == 0:
+            self.scaleLED.set(0)
+            self.scaleLED.config(label="LED ON",fg="green",troughcolor="green")
+            self.after(300,self.turn_led(0))
        
     def rem_thuan(self):
-        # self.send_command(b'7')
+        self.send_command(b'7')
         self.addHis("Đã mở","Rèm")
 
     def rem_nguoc(self):
@@ -584,7 +573,7 @@ class ArduinoFrame(Tk):
                     mes = messagebox.askyesno("Thông báo độ ẩm","Có cần tưới thêm nước?")
                     if mes:
                         print("Đang tưới nước...")
-                        # arduino.write(b'7')
+                        # arduino.write(b'a')
                         self.after(5000, self.off_water)
             else:
                 print("Không đọc được:", repr(line))
@@ -624,8 +613,8 @@ class ArduinoFrame(Tk):
             remaining = alarm_timenot - now
             total_seconds = int(remaining.total_seconds())
 
-            hours = (total_seconds // 3600)%60
-            minutes = (total_seconds % 3600) // 60
+            hours = int(total_seconds / 3600)
+            minutes = int(((total_seconds /60))%60)
 
             msg = f"Còn {hours} giờ {minutes} phút trước khi tưới"
             messagebox.showinfo("Thời gian còn lại", msg)
@@ -633,7 +622,7 @@ class ArduinoFrame(Tk):
             messagebox.showerror("Lỗi", f"Không thể tính thời gian còn lại!")
 
     def off_water(self):
-        self.send_command(b'c')
+        self.send_command(b'b')
         mes = messagebox.askyesno("Hẹn lịch tưới lại","Bạn có muốn giữ lại lịch tưới cũ không?")
         if not mes:
             os.remove(DATA_FILE)
@@ -642,26 +631,26 @@ class ArduinoFrame(Tk):
         current_time = datetime.datetime.now().strftime("%H:%M")
         if current_time == alarm_time:
             self.addHis("Đã tưới nước",f"{alarm_time}")
-            # self.send_command(b'o')
+            # self.send_command(b'a')
             self.after(wtime, lambda: self.off_water())
             return
         self.after(1000,lambda: self.check_alarm(alarm_time,wtime))
 
-
     def turn_fan(self,value):
         if int(value) == 1:
             self.scaleFan.config(label="FAN ON",fg="green",troughcolor="green")
-            # self.send_command(b'q')
+            # self.send_command(b'B')
             self.addHis("Đã mở","Quạt")
         else:
             self.scaleFan.config(label="FAN OFF",fg="white",troughcolor="white")
-            # self.send_command(b'f')
+            # self.send_command(b't')
             self.addHis("Đã tắt","Quạt")
 
     def addHis(self,state,devices):
         time = datetime.datetime.now().strftime("%H:%M:%S")
-        self.his.insert(self.his.size(),f"{state}: {devices}  ------------------ {time}")
+        self.his.insert(self.his.size(),f"{state}: {devices} ------------------ {time}")
         self.his.see(END)
+
 
     def add(self):
         addColor(self.cay_list,self.combo,self.scaleLED,self.his,self.thongbao,self.bright)
@@ -676,7 +665,6 @@ class ArduinoFrame(Tk):
     def logout(self):
         # Quay lại màn hình login
         self.master.show_login_frame()
-
 
 class addColor(Toplevel,ArduinoFrame):
     def __init__(self,cay_list,combo,scaleLED,his,thongbao,bright):
@@ -834,5 +822,5 @@ class App(Tk):
         self.login_frame.pack(fill="both", expand=True)
 
 if __name__ == "__main__":
-    app = App()
+    app = ArduinoFrame()
     app.mainloop()
