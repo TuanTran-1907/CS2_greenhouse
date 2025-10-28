@@ -390,7 +390,7 @@ class ArduinoFrame(Tk):
         self.time_set = {
             "3s":3,
             "4s":4,
-            "5s": 5
+            "5s": 5,
         }
         self.filmeme= Menu(self.menubar,tearoff=0,font=("Montserrat Black",10),activebackground="#00A01B")
         self.menubar.add_cascade(label='FILE',menu=self.filmeme)
@@ -467,7 +467,8 @@ class ArduinoFrame(Tk):
         Button(frame_4, text="Mở rèm", background="#f36bc5",fg='white',font=("Montserrat Black",14),command=self.rem_thuan).pack(side='left',padx=10)
         Button(frame_4, text="Đóng rèm", background="#f36bc5",fg='white',font=("Montserrat Black",14),command=self.rem_nguoc).pack(side='left',padx=10)
         Button(frame_4, text="Dừng rèm", background="#f36bc5",fg='white',font=("Montserrat Black",14),command=self.rem_dung).pack(side='left',padx=10)
-        # Button(self, text="Độ ẩm đất", command=self.read_soil).grid(row=4, column=1, pady=6)
+        Button(framcheck, text="ON", background="#f36bc5",fg='white',font=("Montserrat Black",12),command=self.on_water).pack(side = "left",padx=20)
+        Button(framcheck, text="OFF", background="#f36bc5",fg='white',font=("Montserrat Black",12),command=self.off_water).pack(side = "left",padx=20)
 
 
     def send_command(self, cmd: bytes):
@@ -561,7 +562,7 @@ class ArduinoFrame(Tk):
             self.after(300, self.update_soil)
         except Exception as e:
             print("Lỗi gửi lệnh soil:", e)
-
+ 
     def update_soil(self):
         try:
             line = arduino.readline().decode().strip()
@@ -595,7 +596,6 @@ class ArduinoFrame(Tk):
         data = load_time()
         if any(item.get("start_time") == alarm_time for item in data):
             messagebox.showinfo("Thành công", f"Hẹn giờ tưới lúc {alarm_time}")
-            
         else:
             messagebox.showerror("Lỗi", "Không thể lưu thời gian")
         stime = self.x.get()
@@ -603,6 +603,12 @@ class ArduinoFrame(Tk):
         self.after(1000, lambda: self.check_alarm(alarm_time, wtime))
         self.entry_time.delete(0,END)
         self.addHis("Đã hẹn giờ", f"{alarm_time}")
+
+    def on_water(self):
+        self.send_command(b'a')
+
+    def on_water(self):
+        self.send_command(b'b')      
     
     def show_time_remaining(self,alarm_time):
         try:
@@ -657,7 +663,7 @@ class ArduinoFrame(Tk):
 
     def toggle_radio(self, value):
         if self.x.get() == value:
-            self.x.set("")  
+            self.x.set("")
         else:
             self.x.set(value)
         self.set_alarm()
