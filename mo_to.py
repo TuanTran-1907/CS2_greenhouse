@@ -366,7 +366,7 @@ class ArduinoFrame(Tk):
     def __init__(self):
         super().__init__()
         self.geometry("620x780")
-        self.resizable(False, True)
+        self.resizable(True, True)
         arduino = find_arduinoPort()
         self.background = PhotoImage(file='background.png')
         self.cay_list = {
@@ -399,12 +399,12 @@ class ArduinoFrame(Tk):
         frameL = Frame(self,bg="#250c6a")
         frameL.grid(row=1, column=0,padx=45,pady=(100, 0))
 
-        self.label_temp = Label(frameL, text="NHIỆT ĐỘ: -- °C", fg='white',background="#250c6a",font=("Montserrat Black",12))
-        self.label_hum = Label(frameL, text="ĐỘ ẨM: -- %", fg='white',background="#250c6a",font=("Montserrat Black",12))
-        self.label_soil = Label(frameL, text="ĐỘ ẨM ĐẤT: -- %",background="#250c6a",fg='white',font=("Montserrat Black",12),)
+        self.label_temp = Label(frameL, text="NHIỆT ĐỘ: ---- °C", fg='white',background="#250c6a",font=("Montserrat Black",12))
+        self.label_hum = Label(frameL, text="ĐỘ ẨM: ---- %", fg='white',background="#250c6a",font=("Montserrat Black",12))
+        self.label_soil = Label(frameL, text="ĐỘ ẨM ĐẤT: ---- %",background="#250c6a",fg='white',font=("Montserrat Black",12),)
         self.label_temp.pack(side='left',padx=(0,10))
-        self.label_hum.pack(side='left',padx=(75,5))
-        self.label_soil.pack(side='left',padx=(75,0))
+        self.label_hum.pack(side='left',padx=(60,5))
+        self.label_soil.pack(side='left',padx=(50,0))
         # Frame cobo vs label
         self.frameCl = Frame(self,bg="#250c6a")
         self.frameCl.grid(row=3, column=0,padx=1,pady=(30, 30))
@@ -423,7 +423,7 @@ class ArduinoFrame(Tk):
         Button(self.frameCl,text="+",font=("Montserrat Black",9),width=2,bd=3,bg='#f36bc5',fg='white',command=self.add).pack(side='left')
         
         self.his = Listbox(self,width=50,borderwidth=2,activestyle=None,font=("Montserrat Black",10),height=10)
-        self.his.grid(row=10,column=0,columnspan=3)
+        self.his.grid(row=11,column=0,columnspan=3)
 
         framcheck = Frame(self,background="#250c6a")
         framcheck.grid(row=9,column=0,columnspan=3,pady=6)
@@ -463,12 +463,18 @@ class ArduinoFrame(Tk):
 
         frame_4 = Frame(self,background="#250c6a")
         frame_4.grid(row=6,columnspan=3,pady=6,padx=5)
+        
+        framdoor = Frame(self,background="#250c6a")
+        framdoor.grid(row=10,column=0,columnspan=3)
+
         Button(frame_4, text="Đọc DHT", background="#f36bc5",fg='white',font=("Montserrat Black",14),command=self.read_DHT).pack(side='left',padx=10)
         Button(frame_4, text="Mở rèm", background="#f36bc5",fg='white',font=("Montserrat Black",14),command=self.rem_thuan).pack(side='left',padx=10)
         Button(frame_4, text="Đóng rèm", background="#f36bc5",fg='white',font=("Montserrat Black",14),command=self.rem_nguoc).pack(side='left',padx=10)
         Button(frame_4, text="Dừng rèm", background="#f36bc5",fg='white',font=("Montserrat Black",14),command=self.rem_dung).pack(side='left',padx=10)
-        Button(framcheck, text="ON", background="#f36bc5",fg='white',font=("Montserrat Black",12),command=self.on_water).pack(side = "left",padx=20)
-        Button(framcheck, text="OFF", background="#f36bc5",fg='white',font=("Montserrat Black",12),command=self.off_water).pack(side = "left",padx=20)
+        Button(framcheck, text="ON", background="#f36bc5",width=4,fg='white',font=("Montserrat Black",13),command=self.on_water).pack(side = "left",padx=20)
+        Button(framcheck, text="OFF", background="#f36bc5",width=4,fg='white',font=("Montserrat Black",13),command=self.off_water).pack(side = "left",padx=20)
+        Button(framdoor, text="OPEN", background="#f36bc5",width=4,fg='white',font=("Montserrat Black",13),command=self.cua_mo).pack(side = "left",padx=25,pady=(7,3))
+        Button(framdoor, text="SHUT", background="#f36bc5",width=4,fg='white',font=("Montserrat Black",13),command=self.cua_dong).pack(side = "left",padx=25,pady=(7,3))
 
 
     def send_command(self, cmd: bytes):
@@ -694,6 +700,8 @@ class ArduinoFrame(Tk):
 
     def add(self):
         addColor(self.cay_list,self.combo,self.scaleLED,self.his,self.thongbao,self.bright)
+        self.scaleLED.set(1)
+        self.turn_led(1)
 
     def toggle_radio(self, value):
         if self.x.get() == value:
