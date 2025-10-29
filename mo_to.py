@@ -480,9 +480,9 @@ class ArduinoFrame(Tk):
         except Exception as e:
             messagebox.showerror("Lỗi", f"Gửi lệnh thất bại: {e}")
 
-    def sendVal(self,value):
-        if int(value) > 0:
-           self.addHis("Độ sáng",f"{value}")
+    # def sendVal(self,value):
+    #     if int(value) > 0:
+    #        self.addHis("Độ sáng",f"{value}")
 
     def turn_led(self,value):
         cay = self.combo.get()
@@ -517,6 +517,16 @@ class ArduinoFrame(Tk):
             self.scaleLED.set(0)
             self.scaleLED.config(label="LED ON",fg="green",troughcolor="green")
             self.after(300,self.turn_led(0))
+    
+    def sendVal(self, value):
+        try:
+            val = int(value)
+            if val > 0:
+                self.addHis("Độ sáng", f"{val}")
+                command = f"S{val}\n"
+                self.send_command(command.encode())
+        except Exception as e:
+            print("Lỗi gửi độ sáng:", e)
        
     def rem_thuan(self):
         self.send_command(b'7')
