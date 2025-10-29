@@ -452,7 +452,7 @@ class ArduinoFrame(Tk):
         framS.grid(row=4,column=0,pady=10)
         self.scaleLED = Scale(framS, from_=0, to=1,orient='horizontal',fg='white',font=("Montserrat Black",10),showvalue=0,background="#f36bc5",length=65,label="LED OFF",troughcolor="white",command= self.turn_led)
         self.scaleLED.pack(side='left',padx=(0,70))
-
+        
         self.scaleFan = Scale(framS, from_=0, to=1,orient='horizontal', background="#f36bc5",fg='white',font=("Montserrat Black",10),showvalue=0,length=65,label="FAN OFF",troughcolor="white",command= self.turn_fan)
         self.scaleFan.pack(side='left',padx=(45,50))
 
@@ -487,11 +487,12 @@ class ArduinoFrame(Tk):
     def turn_led(self,value):
         cay = self.combo.get()
         color = self.cay_list.get(cay)
-        if len(cay) == 0:
+        if color == None:
             self.addHis("Chưa chọn cây"," ")
             self.scaleLED.config(label="LED OFF",fg="white",troughcolor="white")
+            print(cay)
 
-        elif int(value) == 1 and len(cay)>0:
+        elif int(value) == 1 and color != None:
             self.scaleLED.config(label="LED ON",fg="green",troughcolor="green")
             # self.send_command(f"3{color}".encode())
             print(color)
@@ -511,22 +512,34 @@ class ArduinoFrame(Tk):
             self.turn_led(1)
 
     def blink_led(self):
-        self.send_command(b'6')
+        # self.send_command(b'6')
         self.addHis("Nháy","LED")
-        if self.scaleLED.get() == 0:
-            self.scaleLED.set(0)
-            self.scaleLED.config(label="LED ON",fg="green",troughcolor="green")
-            self.after(300,self.turn_led(0))
     
+    # def sendVal(self, value):
+    #     try:
+    #         val = int(value)
+    #         if val > 0:
+    #             self.addHis("Độ sáng", f"{val}")
+    #             command = f"S{val}\n"
+    #             self.after(800,self.send_command(command.encode()))
+    #     except Exception as e:
+    #         print("Lỗi gửi độ sáng:", e)
+
     def sendVal(self, value):
         try:
             val = int(value)
-            if val > 0:
-                self.addHis("Độ sáng", f"{val}")
-                command = f"S{val}\n"
-                self.send_command(command.encode())
+            val = max(0, min(255, val))
+            self.addHis("Độ sáng", f"{val}")
+            command = f"S{val}\n"
+
+            if hasattr(self, "pending_after"):
+                self.after_cancel(self.pending_after)
+
+            self.pending_after = self.after(1000, lambda: self.send_command(command.encode()))
+
         except Exception as e:
             print("Lỗi gửi độ sáng:", e)
+
        
     def rem_thuan(self):
         self.send_command(b'7')
@@ -539,6 +552,14 @@ class ArduinoFrame(Tk):
     def rem_dung(self):
         self.send_command(b'9')
         self.addHis("Đã dừng","Rèm")
+
+    def cua_mo(self):
+        self.send_command(b'o')
+        self.addHis("Đã mở","Cửa")
+
+    def cua_dong(self):
+        self.send_command(b'c')
+        self.addHis("Đã đóng","Cửa")
 
     def read_DHT(self):
         if not arduino:
@@ -626,11 +647,14 @@ class ArduinoFrame(Tk):
             alarm_timenot = datetime.datetime.strptime(alarm_time, "%H:%M")
             alarm_timenot = alarm_timenot.replace(year=now.year, month=now.month, day=now.day)
 
+            if alarm_timenot <= now:
+                alarm_timenot += datetime.timedelta(days=1)
+
             remaining = alarm_timenot - now
             total_seconds = int(remaining.total_seconds())
 
-            hours = int(total_seconds / 3600)
-            minutes = int(((total_seconds /60))%60)
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
 
             msg = f"Còn {hours} giờ {minutes} phút trước khi tưới"
             messagebox.showinfo("Thời gian còn lại", msg)
